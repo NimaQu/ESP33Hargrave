@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>WiFi Settings</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="navbar">
+        <a href="index.html">Home</a>
+        <a href="setting.html">WiFi Settings</a>
+    </div>
+    <div class="container">
+        <h2>WiFi Settings</h2>
+        <form id="wifi-form">
+            <label for="wifi-ssid">SSID:</label>
+            <input type="text" id="wifi-ssid" name="ssid" required placeholder="WiFi SSID">
+            <label for="wifi-pass">Password:</label>
+            <input type="password" id="wifi-pass" name="pass" required placeholder="WiFi Password">
+            <button type="submit">Save WiFi Settings</button>
+        </form>
+        <div id="wifi-response"></div>
+    </div>
+    <!-- 引入外部 JavaScript 文件 -->
+    <script src="script.js"></script>
+    <script>
+        // 监听表单提交事件
+        document.getElementById('wifi-form').addEventListener('submit', function (event) {
+            event.preventDefault();
+            const ssid = document.getElementById('wifi-ssid').value;
+            const pass = document.getElementById('wifi-pass').value;
+            sendData('/api/v1/wifi', { ssid: ssid, pass: pass });
+        });
+
+        // 覆写 sendData 函数以处理 WiFi 设置逻辑
+        function sendData(endpoint, data) {
+            const apiKey = localStorage.getItem('api-key');
+            if (!apiKey) {
+                alert('API Key is required');
+                return;
+            }
+
+            const formData = new URLSearchParams();
+            for (const key in data) {
+                formData.append(key, data[key]);
+            }
+
+            // 如果是 WiFi 设置请求，处理重启逻辑
+            if (endpoint === '/api/v1/wifi') {
+                // ... [发送请求的代码] ...
+                // 在请求成功后显示消息并设置重启
+                fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'api-key': apiKey
+                    },
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.code === "200") {
+                            document.getElementById('wifi-response').textContent = "WiFi settings saved. Restarting in 3 seconds...";
+                        } else {
+                            document.getElementById('wifi-response').textContent = "Error saving WiFi settings.";
+                        }
+                    })
+                    .catch((error) => {
+                        console.error('Error:', error);
+                    });
+            }
+        }
+    </script>
+</body>
+
+</html>

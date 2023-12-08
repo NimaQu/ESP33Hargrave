@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Control Panel</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="navbar">
+        <a href="index.html">Home</a>
+        <a href="setting.html">WiFi Settings</a>
+      </div>
+    <div class="container">
+        <h2>Device Control Panel</h2>
+        <div>
+            <label for="api-key">API Key:</label>
+            <input type="text" id="api-key" placeholder="Enter API Key">
+            <button class="btn-small" onclick="saveApiKeyAndFetchStatus()">Save and Update</button>
+            <button class="btn-small" onclick="getCurrentStatus()">Refresh Data</button>
+        </div>
+        <div>
+            <label>Current Temperature Setting:</label>
+            <button onclick="adjustTemperature(-0.5)">-</button>
+            <span id="current-temperature">--</span>
+            <button onclick="adjustTemperature(0.5)">+</button>
+        </div>
+        <div>
+            <label for="temp-value">Set Temperature:</label>
+            <input type="number" id="temp-value" placeholder="Enter Temperature Value">
+            <button
+                onclick="sendData('/api/v1/temperature', {value: document.getElementById('temp-value').value})">Submit
+                Temperature</button>
+        </div>
+        <div>
+            <label>Current Fan Mode:</label>
+            <span id="current-fan-mode">--</span>
+            <button onclick="sendData('/api/v1/fan', {mode: 'high'})">High</button>
+            <button onclick="sendData('/api/v1/fan', {mode: 'med'})">Med</button>
+            <button onclick="sendData('/api/v1/fan', {mode: 'low'})">Low</button>
+            <button onclick="sendData('/api/v1/fan', {mode: 'auto'})">Auto</button>
+            <button onclick="sendData('/api/v1/fan', {mode: 'off'})">Off</button>
+        </div>
+        <h3>Response:</h3>
+        <pre id="response"></pre>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
