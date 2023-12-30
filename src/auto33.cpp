@@ -6,6 +6,7 @@
 #include <ESPAsyncWebServer.h>
 #include <SPIFFS.h>
 #include <EEPROM.h>
+#include <Ticker.h>
 
 
 void setTemperature(float temp);
@@ -14,7 +15,10 @@ String responseJson(String code, String message, String data);
 void printWiFiStatus();
 void resetWiFi();
 bool checkApiKeys(AsyncWebServerRequest *request);
+void checkWifi();
 
+
+Ticker wifiChecker;
 AsyncWebServer server(80);
 float currentTemperature = 24.0;
 FanMode currentFanMode = FanMode::Auto;
@@ -47,6 +51,9 @@ void setup()
 
   // setup EEPROM
   EEPROM.begin(512);
+
+  // set up wifi checker
+  wifiChecker.attach(30, checkWifi);
 
 
   // 按下超过 3 秒，重置 WiFi 设置
@@ -285,4 +292,11 @@ void resetWiFi()
 
   Serial.println("WiFi settings reset. Please reconfigure.");
   ESP.restart();
+}
+
+void checkWifi() {
+  if(WiFi.status() != WL_CONNECTED) {
+    Serial.println("WiFi disconnected, attempting reconnection...");
+    WiFi.reconnect(); // 尝试重新连接
+  }
 }
