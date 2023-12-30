@@ -8,7 +8,6 @@
 #include <EEPROM.h>
 #include <Ticker.h>
 
-
 void setTemperature(float temp);
 void setFanMode(FanMode mode);
 String responseJson(String code, String message, String data);
@@ -16,7 +15,6 @@ void printWiFiStatus();
 void resetWiFi();
 bool checkApiKeys(AsyncWebServerRequest *request);
 void checkWifi();
-
 
 Ticker wifiChecker;
 AsyncWebServer server(80);
@@ -44,7 +42,8 @@ void setup()
   setTemperature(24.0);
 
   // setup SPIFFS
-  if (!SPIFFS.begin(true)) {
+  if (!SPIFFS.begin(true))
+  {
     Serial.println("An Error has occurred while mounting SPIFFS");
     return;
   }
@@ -55,12 +54,13 @@ void setup()
   // set up wifi checker
   wifiChecker.attach(30, checkWifi);
 
-
   // 按下超过 3 秒，重置 WiFi 设置
   pinMode(resetPin, INPUT_PULLUP);
-  if (digitalRead(resetPin) == LOW) {
+  if (digitalRead(resetPin) == LOW)
+  {
     delay(3000);
-    if (digitalRead(resetPin) == LOW) {
+    if (digitalRead(resetPin) == LOW)
+    {
       resetWiFi();
     }
   }
@@ -69,24 +69,29 @@ void setup()
   String ssidStored = EEPROM.readString(0);
   String passStored = EEPROM.readString(ssidStored.length() + 1);
 
-  if (ssidStored.length() > 0) {
+  if (ssidStored.length() > 0)
+  {
     WiFi.begin(ssidStored.c_str(), passStored.c_str());
     Serial.println("Connecting to WiFi...");
-    while (WiFi.status() != WL_CONNECTED) {
+    while (WiFi.status() != WL_CONNECTED)
+    {
       delay(500);
       Serial.print(".");
     }
     Serial.println("");
     Serial.println("WiFi connected");
-  } else {
+  }
+  else
+  {
     Serial.println("No WiFi credentials stored, starting AP for configuration...");
-      WiFi.softAP("Fubuki Dev - ESP33Hargrave", "1145141919");
+    WiFi.softAP("Fubuki Dev - ESP33Hargrave", "1145141919");
   }
 
   printWiFiStatus();
 
   // Set up the web server
-  server.on("/api/v1/temperature", HTTP_POST, [](AsyncWebServerRequest *request){
+  server.on("/api/v1/temperature", HTTP_POST, [](AsyncWebServerRequest *request)
+            {
     if (!checkApiKeys(request)) {
       request->send(401, "application/json", responseJson("401", "invalid api key", "{}"));
       return;
@@ -98,22 +103,20 @@ void setup()
       request->send(200, "application/json", responseJson("200", "success", "{}"));
     } else {
       request->send(400, "application/json", responseJson("400", "missing param: value", "{}"));
-    } 
-  });
+    } });
 
   server.on("/api/v1/temperature", HTTP_GET, [](AsyncWebServerRequest *request)
-  {
+            {
     if (!checkApiKeys(request)) {
       request->send(401, "application/json", responseJson("401", "invalid api key", "{}"));
       return;
     }
 
     String data = "{\"temperature\":" + String(currentTemperature) + "}";
-    request->send(200, "application/json", responseJson("200", "success", data));
-  });
+    request->send(200, "application/json", responseJson("200", "success", data)); });
 
   server.on("/api/v1/fan", HTTP_POST, [](AsyncWebServerRequest *request)
-  {
+            {
     if (!checkApiKeys(request)) {
       request->send(401, "application/json", responseJson("401", "invalid api key", "{}"));
       return;
@@ -139,11 +142,10 @@ void setup()
       request->send(200, "application/json", responseJson("200", "success", "{}"));
     } else {
       request->send(400, "application/json", responseJson("400", "missing param: mode", "{}"));
-    }
-  });
+    } });
 
   server.on("/api/v1/fan", HTTP_GET, [](AsyncWebServerRequest *request)
-  {
+            {
     if (!checkApiKeys(request)) {
       request->send(401, "application/json", responseJson("401", "invalid api key", "{}"));
       return;
@@ -167,22 +169,20 @@ void setup()
         data = "{\"mode\":\"off\"}";
         break;
     };
-    request->send(200, "application/json", responseJson("200", "success", data));
-  });
+    request->send(200, "application/json", responseJson("200", "success", data)); });
 
   server.on("/api/v1/wifi", HTTP_GET, [](AsyncWebServerRequest *request)
-  {
+            {
     if (!checkApiKeys(request)) {
       request->send(401, "application/json", responseJson("401", "invalid api key", "{}"));
       return;
     }
 
     String data = "{\"ssid\":\"" + String(WiFi.SSID()) + "\", \"ip\":\"" + String(WiFi.localIP()) + "\", \"rssi\":\"" + String(WiFi.RSSI()) + "\"}";
-    request->send(200, "application/json", responseJson("200", "success", data));
-  });
+    request->send(200, "application/json", responseJson("200", "success", data)); });
 
   server.on("/api/v1/wifi", HTTP_POST, [](AsyncWebServerRequest *request)
-  {
+            {
     if (!checkApiKeys(request)) {
       request->send(401, "application/json", responseJson("401", "invalid api key", "{}"));
       return;
@@ -200,14 +200,10 @@ void setup()
       ESP.restart();
     } else {
       request->send(400, "application/json", responseJson("400", "missing param: ssid or pass", "{}"));
-    }
-  });
-
+    } });
 
   server.onNotFound([](AsyncWebServerRequest *request)
-  {
-    request->send(404, "application/json", responseJson("404", "not found", "{}"));
-  });
+                    { request->send(404, "application/json", responseJson("404", "not found", "{}")); });
 
   // 静态文件
   server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html");
@@ -269,23 +265,27 @@ bool checkApiKeys(AsyncWebServerRequest *request)
 void resetWiFi()
 {
   bool isEmpty = true;
-  
+
   // 检查 EEPROM 是否为空（所有位置都为零）
-  for (int i = 0; i < 512; ++i) {
-    if (EEPROM.read(i) != 0) {
+  for (int i = 0; i < 512; ++i)
+  {
+    if (EEPROM.read(i) != 0)
+    {
       isEmpty = false;
       break; // 找到非零值，跳出循环
     }
   }
 
   // 如果 EEPROM 已经为空，则跳过重置
-  if (isEmpty) {
+  if (isEmpty)
+  {
     Serial.println("WiFi settings already reset, skipping...");
     return;
   }
 
   // 清空 EEPROM
-  for (int i = 0; i < 512; ++i) {
+  for (int i = 0; i < 512; ++i)
+  {
     EEPROM.write(i, 0);
   }
   EEPROM.commit();
@@ -294,9 +294,16 @@ void resetWiFi()
   ESP.restart();
 }
 
-void checkWifi() {
-  if(WiFi.status() != WL_CONNECTED) {
+void checkWifi()
+{
+  // 检查当前 WiFi 模式
+  if (WiFi.getMode() != WIFI_STA)
+  {
+    return;
+  }
+  if (WiFi.status() != WL_CONNECTED)
+  {
     Serial.println("WiFi disconnected, attempting reconnection...");
-    WiFi.reconnect(); // 尝试重新连接
+    WiFi.reconnect();
   }
 }
