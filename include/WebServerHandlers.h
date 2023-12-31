@@ -4,6 +4,10 @@
 
 void handleNotFound(AsyncWebServerRequest *request);
 
+void handleTempOffsetPost(AsyncWebServerRequest *request);
+
+void handleTempOffsetGet(AsyncWebServerRequest *request);
+
 void handleTemperaturePost(AsyncWebServerRequest *request);
 
 void handleTemperatureGet(AsyncWebServerRequest *request);

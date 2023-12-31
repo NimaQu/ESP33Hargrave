@@ -13,7 +13,6 @@ void setTemperature(float temp);
 void setFanMode(FanMode mode);
 String responseJson(String code, String message, String data);
 void printWiFiStatus();
-void resetWifiSetting();
 bool checkApiKeys(AsyncWebServerRequest *request);
 void checkWifi();
 
@@ -22,6 +21,7 @@ AsyncWebServer server(80);
 float currentTemperature = 24.0;
 FanMode currentFanMode = FanMode::Auto;
 Preferences preferences;
+int tempResOffsetStored = 0;
 
 void setup()
 {
@@ -39,10 +39,6 @@ void setup()
   enablePotWrite(fanCsPinCWF);
   enablePotWrite(tempCsPinCWF);
 
-  // Set the potentiometers to their default values
-  setFanMode(FanMode::Auto);
-  setTemperature(24.0);
-
   // setup SPIFFS
   if (!SPIFFS.begin(true))
   {
@@ -56,6 +52,11 @@ void setup()
     Serial.println("An Error has occurred while mounting nvs");
     return;
   }
+
+  // Set the potentiometers to their default values
+  tempResOffsetStored = preferences.getInt("tempResOffset", 0);
+  setFanMode(FanMode::Auto);
+  setTemperature(24.0);
 
   // set up wifi checker
   wifiChecker.attach(30, checkWifi);
@@ -78,11 +79,9 @@ void setup()
     }
   }
 
-  // read settings from nvs
+  // read wifi settings from nvs
   String ssidStored = preferences.getString("ssid", "");
   String passStored = preferences.getString("pass", "");
-
-  int resOffsetStored = preferences.getInt("resOffset", 0);
 
   if (ssidStored.length() > 0)
   {
@@ -103,27 +102,20 @@ void setup()
   }
 
   printWiFiStatus();
+
   preferences.end();
 
   // Set up the web server
   server.on("/api/v1/temperature", HTTP_POST, handleTemperaturePost);
-
   server.on("/api/v1/temperature", HTTP_GET, handleTemperatureGet);
-
   server.on("/api/v1/fan", HTTP_POST, handleFanPost);
-
   server.on("/api/v1/fan", HTTP_GET, handleFanGet);
-
   server.on("/api/v1/wifi", HTTP_GET, handleWifiGet);
-
   server.on("/api/v1/wifi", HTTP_POST, handleWifiPost);
-
+  server.on("/api/v1/tempOffset", HTTP_GET, handleTempOffsetGet);
+  server.on("/api/v1/tempOffset", HTTP_POST, handleTempOffsetPost);
   server.onNotFound(handleNotFound);
-
-  // 静态文件
   server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html");
-
-  // 启动服务器
   server.begin();
 }
 
@@ -144,6 +136,21 @@ void printWiFiStatus()
   Serial.print("Signal strength (RSSI):");
   Serial.print(rssi);
   Serial.println(" dBm");
+
+  Serial.print("MAC address: ");
+  Serial.println(WiFi.macAddress());
+
+  Serial.print("Gateway: ");
+  Serial.println(WiFi.gatewayIP());
+
+  Serial.print("Subnet: ");
+  Serial.println(WiFi.subnetMask());
+
+  Serial.print("DNS: ");
+  Serial.println(WiFi.dnsIP());
+
+  Serial.print("Hostname: ");
+  Serial.println(WiFi.getHostname());
 }
 
 void checkWifi()

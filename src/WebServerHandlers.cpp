@@ -6,6 +6,7 @@
 extern float currentTemperature;
 extern FanMode currentFanMode;
 extern Preferences preferences;
+extern int tempResOffsetStored;
 bool checkApiKeys(AsyncWebServerRequest *request);
 void resetWifiSetting();
 String responseJson(String code, String message, String data);
@@ -15,6 +16,47 @@ String responseJson(String code, String message, String data);
 void handleNotFound(AsyncWebServerRequest *request)
 {
     request->send(404, "application/json", responseJson("404", "not found", "{}"));
+}
+
+// Post /api/v1/tempOffset
+void handleTempOffsetPost(AsyncWebServerRequest *request)
+{
+    if (!checkApiKeys(request))
+    {
+        request->send(401, "application/json", responseJson("401", "invalid api key", "{}"));
+        return;
+    }
+
+    if (request->hasParam("value", true))
+    {
+        try{
+            tempResOffsetStored = request->getParam("value", true)->value().toInt();
+        }catch(...){
+            request->send(400, "application/json", responseJson("400", "invalid param: value", "{}"));
+            return;
+        }
+        preferences.begin("ESP33Hargrave", false);
+        preferences.putInt("tempResOffset", tempResOffsetStored);
+        preferences.end();
+        request->send(200, "application/json", responseJson("200", "success", "{}"));
+    }
+    else
+    {
+        request->send(400, "application/json", responseJson("400", "missing param: value", "{}"));
+    }
+}
+
+// Get /api/v1/tempOffset
+void handleTempOffsetGet(AsyncWebServerRequest *request)
+{
+    if (!checkApiKeys(request))
+    {
+        request->send(401, "application/json", responseJson("401", "invalid api key", "{}"));
+        return;
+    }
+
+    String data = "{\"offset\":" + String(tempResOffsetStored) + "}";
+    request->send(200, "application/json", responseJson("200", "success", data));
 }
 
 // Post /api/v1/temperature
@@ -28,7 +70,12 @@ void handleTemperaturePost(AsyncWebServerRequest *request)
 
     if (request->hasParam("value", true))
     {
-        currentTemperature = request->getParam("value", true)->value().toFloat();
+        try{
+            currentTemperature = request->getParam("value", true)->value().toFloat();
+        }catch(...){
+            request->send(400, "application/json", responseJson("400", "invalid param: value", "{}"));
+            return;
+        }
         setTemperature(currentTemperature);
         request->send(200, "application/json", responseJson("200", "success", "{}"));
     }
