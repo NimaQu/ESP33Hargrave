@@ -155,7 +155,14 @@ void checkWifi()
   }
   if (WiFi.status() != WL_CONNECTED)
   {
-    Serial.println("WiFi disconnected, attempting reconnection...");
     WiFi.reconnect();
+    Serial.println("WiFi disconnected, attempting reconnection...");
+    while (WiFi.status() != WL_CONNECTED)
+    {
+      delay(500);
+      Serial.print(".");
+    }
+    Serial.println("");
+    Serial.println("WiFi reconnected");
   }
 }
