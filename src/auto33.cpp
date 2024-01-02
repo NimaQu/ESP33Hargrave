@@ -164,10 +164,17 @@ void checkWifi()
   {
     WiFi.reconnect();
     Serial.println("WiFi disconnected, attempting reconnection...");
+    int retryCount = 0;
     while (WiFi.status() != WL_CONNECTED)
     {
+      if (retryCount > 2)
+      {
+        Serial.println("WiFi reconnection failed");
+        return;
+      }
       delay(500);
       Serial.print(".");
+      retryCount++;
     }
     Serial.println("");
     Serial.println("WiFi reconnected");
